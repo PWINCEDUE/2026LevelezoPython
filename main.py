@@ -39,6 +39,35 @@ class JszEszkozNyilvantarto:
         self.ip_eredmeny_felirat = tk.Label(alapablak, text="")
         self.ip_eredmeny_felirat.pack()
 
+        ip_utmutato = tk.Label(
+            alapablak,
+            text="Add meg a keresett eszköz IPv4 címét:",
+        )
+        ip_utmutato.pack(pady=(20, 5))
+
+        self.ip_mezo = tk.Entry(alapablak, width=35)
+        self.ip_mezo.pack()
+
+        nev_kereso_gomb = tk.Button(
+            alapablak,
+            text="Gépnév lekérése IP cím alapján",
+            command=self.jsz_ip_alapjan_gepnev_megjelenitese,
+        )
+        nev_kereso_gomb.pack(pady=10)
+
+        self.nev_eredmeny_felirat = tk.Label(alapablak, text="")
+        self.nev_eredmeny_felirat.pack()
+
+        elerhetoseg_gomb = tk.Button(
+            alapablak,
+            text="Elérhetőség ellenőrzése",
+            command=self.jsz_elerhetoseg_megjelenitese,
+        )
+        elerhetoseg_gomb.pack(pady=10)
+
+        self.elerhetoseg_felirat = tk.Label(alapablak, text="")
+        self.elerhetoseg_felirat.pack()
+
     def jsz_gepnev_megjelenitese(self):
         gep_neve = jsz_halozat.jsz_gepnev_lekerese()
         ip_cim = jsz_halozat.jsz_ip_cim_lekerese(gep_neve)
@@ -52,12 +81,45 @@ class JszEszkozNyilvantarto:
 
         if not gep_neve:
             self.ip_eredmeny_felirat.config(
-                text="Először adj meg egy gépnevet!"
+                text="Először, adj meg egy gépnevet!"
             )
             return
 
         ip_cim = jsz_halozat.jsz_ip_cim_lekerese(gep_neve)
         self.ip_eredmeny_felirat.config(text=f"IPv4-cím: {ip_cim}")
+
+    def jsz_ip_alapjan_gepnev_megjelenitese(self):
+        ip_cim = self.ip_mezo.get().strip()
+
+        if not ip_cim:
+            self.nev_eredmeny_felirat.config(
+                text="Először, adj meg egy IP címet!"
+            )
+            return
+
+        gep_neve = jsz_halozat.jsz_gepnev_lekerese_ip_alapjan(ip_cim)
+        self.nev_eredmeny_felirat.config(text=gep_neve)
+
+    def jsz_elerhetoseg_megjelenitese(self):
+        ip_cim = self.ip_mezo.get().strip()
+
+        if not ip_cim:
+            self.elerhetoseg_felirat.config(
+                text="Először, adj meg egy IP címet!"
+            )
+            return
+
+        elerheto = jsz_halozat.jsz_elerhetoseg_ellenorzese(ip_cim)
+
+        if elerheto:
+            self.elerhetoseg_felirat.config(
+                text="Az eszköz válaszolt a pingre."
+            )
+        else:
+            self.elerhetoseg_felirat.config(
+                text="Nem érkezett válasz a pingre."
+            )
+
 
 root = tk.Tk()
 app = JszEszkozNyilvantarto(root)
