@@ -1,12 +1,14 @@
 import tkinter as tk
 
+from tkinter import ttk
+
 import jsz_halozat
 
 
 class JszEszkozNyilvantarto:
     def __init__(self, alapablak):
         alapablak.title("Informatikai eszköznyilvántartó")
-        alapablak.geometry("900x500")
+        alapablak.geometry("900x700")
 
         self.gepnev_felirat = tk.Label(
             alapablak,
@@ -67,6 +69,40 @@ class JszEszkozNyilvantarto:
 
         self.elerhetoseg_felirat = tk.Label(alapablak, text="")
         self.elerhetoseg_felirat.pack()
+        hozzaadas_gomb = tk.Button(
+            alapablak,
+            text="Eszköz hozzáadása IP cím alapján",
+            command=self.jsz_eszkoz_hozzaadasa,
+        )
+        hozzaadas_gomb.pack(pady=10)
+
+        torles_gomb = tk.Button(
+            alapablak,
+            text="Kijelölt eszköz törlése.",
+            command=self.jsz_eszkoz_torlese,
+        )
+        torles_gomb.pack(pady=5)
+
+        self.eszkoz_tablazat = ttk.Treeview(
+            alapablak,
+            columns=("gepnev", "ip_cim", "allapot"),
+            show="headings",
+            height=5,
+        )
+        self.eszkoz_tablazat.heading("gepnev", text="Gépnév")
+        self.eszkoz_tablazat.heading("ip_cim", text="IPv4 cím")
+        self.eszkoz_tablazat.heading("allapot", text="Állapot")
+
+        self.eszkoz_tablazat.column("gepnev", width=250)
+        self.eszkoz_tablazat.column("ip_cim", width=180)
+        self.eszkoz_tablazat.column("allapot", width=250)
+
+        self.eszkoz_tablazat.pack(
+            padx=20,
+            pady=20,
+            fill="both",
+            expand=True,
+        )
 
     def jsz_gepnev_megjelenitese(self):
         gep_neve = jsz_halozat.jsz_gepnev_lekerese()
@@ -86,7 +122,12 @@ class JszEszkozNyilvantarto:
             return
 
         ip_cim = jsz_halozat.jsz_ip_cim_lekerese(gep_neve)
-        self.ip_eredmeny_felirat.config(text=f"IPv4-cím: {ip_cim}")
+        self.ip_eredmeny_felirat.config(text=f"IPv4 cím: {ip_cim}")
+
+        self.ip_mezo.delete(0, tk.END)
+
+        if jsz_halozat.jsz_ipv4_cim_ervenyes(ip_cim):
+            self.ip_mezo.insert(0, ip_cim)
 
     def jsz_ip_alapjan_gepnev_megjelenitese(self):
         ip_cim = self.ip_mezo.get().strip()
@@ -94,6 +135,12 @@ class JszEszkozNyilvantarto:
         if not ip_cim:
             self.nev_eredmeny_felirat.config(
                 text="Először, adj meg egy IP címet!"
+            )
+            return
+
+        if not jsz_halozat.jsz_ipv4_cim_ervenyes(ip_cim):
+            self.nev_eredmeny_felirat.config(
+                text="Érvénytelen IPv4 cím!"
             )
             return
 
@@ -109,6 +156,12 @@ class JszEszkozNyilvantarto:
             )
             return
 
+        if not jsz_halozat.jsz_ipv4_cim_ervenyes(ip_cim):
+            self.elerhetoseg_felirat.config(
+                text="Érvénytelen IPv4 cím!"
+            )
+            return
+
         elerheto = jsz_halozat.jsz_elerhetoseg_ellenorzese(ip_cim)
 
         if elerheto:
@@ -120,6 +173,65 @@ class JszEszkozNyilvantarto:
                 text="Nem érkezett válasz a pingre."
             )
 
+    def jsz_eszkoz_hozzaadasa(self):
+        ip_cim = self.ip_mezo.get().strip()
+
+        if not ip_cim:
+            self.elerhetoseg_felirat.config(
+                text="Először, adj meg egy IP címet!"
+            )
+            return
+
+        if not jsz_halozat.jsz_ipv4_cim_ervenyes(ip_cim):
+            self.elerhetoseg_felirat.config(
+                text="Érvénytelen IPv4 cím!"
+            )
+            return
+        for sor_azonosito in self.eszkoz_tablazat.get_children():
+            tarolt_ip_cim = self.eszkoz_tablazat.set(
+                sor_azonosito,
+                "ip_cim",
+            )
+
+            if tarolt_ip_cim == ip_cim:
+                self.elerhetoseg_felirat.config(
+                    text="Ez az IP cím már szerepel a táblázatban."
+                )
+                return
+
+        gep_neve = jsz_halozat.jsz_gepnev_lekerese_ip_alapjan(ip_cim)
+        elerheto = jsz_halozat.jsz_elerhetoseg_ellenorzese(ip_cim)
+
+        if elerheto:
+            allapot = "Válaszolt a pingre."
+        else:
+            allapot = "Nincs érkezett válasz a pingre."
+
+        self.eszkoz_tablazat.insert(
+            "",
+            "end",
+            values=(gep_neve, ip_cim, allapot),
+        )
+
+        self.elerhetoseg_felirat.config(
+            text="Az eszközt hozzáadtuk a táblázathoz."
+        )
+
+    def jsz_eszkoz_torlese(self):
+        kijelolt_sorok = self.eszkoz_tablazat.selection()
+
+        if not kijelolt_sorok:
+            self.elerhetoseg_felirat.config(
+                text="Először, jelölj ki egy eszközt a táblázatban!"
+            )
+            return
+
+        for sor_azonosito in kijelolt_sorok:
+            self.eszkoz_tablazat.delete(sor_azonosito)
+
+        self.elerhetoseg_felirat.config(
+            text="A kijelölt sorokat töröltük a táblázatból!"
+        )
 
 root = tk.Tk()
 app = JszEszkozNyilvantarto(root)

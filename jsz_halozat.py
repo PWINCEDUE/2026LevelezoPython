@@ -1,3 +1,4 @@
+import ipaddress
 import socket
 import subprocess
 
@@ -32,3 +33,11 @@ def jsz_elerhetoseg_ellenorzese(ip_cim):
     )
 
     return "ttl=" in eredmeny.stdout.lower()
+
+
+def jsz_ipv4_cim_ervenyes(ip_cim):
+    try:
+        ipaddress.IPv4Address(ip_cim)
+        return  True
+    except ipaddress.AddressValueError:
+        return False
